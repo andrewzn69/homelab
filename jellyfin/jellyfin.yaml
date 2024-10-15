@@ -1,0 +1,163 @@
+# Create an NFS StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: Immediate
+---
+# Create NFS PersistentVolumes
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-config-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/jellyfin/config
+  storageClassName: nfs-storage
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-cache-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/jellyfin/cache
+  storageClassName: nfs-storage
+---
+# Create NFS PersistentVolumeClaims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-cache-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-storage
+---
+# Jellyfin Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+  namespace: media
+  labels:
+    app: jellyfin
+spec:
+  selector:
+    matchLabels:
+      app: jellyfin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      nodeSelector:
+        # kubernetes.io/hostname: rocky
+      containers:
+      - name: jellyfin
+        image: docker.io/jellyfin/jellyfin
+        ports:
+        - containerPort: 8096
+        volumeMounts:
+        - mountPath: /media/Shows
+          name: external-shows
+        - mountPath: /media/Movies1
+          name: movies1
+        - mountPath: /media/Movies2
+          name: movies2
+        - mountPath: /config
+          name: jellyfin-config
+        - mountPath: /cache
+          name: jellyfin-cache
+      volumes:
+        - name: external-shows
+          nfs:
+            server: 192.168.0.113
+            path: /mnt/external/Shows
+        - name: movies1
+          nfs:
+            server: 192.168.0.113
+            path: /mnt/movies1/Movies
+        - name: movies2
+          nfs:
+            server: 192.168.0.113
+            path: /mnt/movies2/Movies
+        - name: jellyfin-config
+          persistentVolumeClaim:
+            claimName: jellyfin-config-pvc
+        - name: jellyfin-cache
+          persistentVolumeClaim:
+            claimName: jellyfin-cache-pvc
+---
+# Jellyfin Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  selector:
+    app: jellyfin
+  ports:
+    - protocol: TCP
+      port: 8096
+      targetPort: 8096
+  type: LoadBalancer
+---
+# Jellyfin Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin-ingress
+  namespace: media
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+  - host: jellyfin.zemn.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jellyfin
+            port:
+              number: 8096
+  tls:
+  - hosts:
+    - jellyfin.zemn.xyz
+    secretName: zemn-wildcard-tls
