@@ -22,6 +22,7 @@ metadata:
 spec:
   addresses:
   - 192.168.0.160-192.168.0.190
+  - 192.168.0.113-192.168.0.113
 
 ---
 apiVersion: metallb.io/v1beta1
