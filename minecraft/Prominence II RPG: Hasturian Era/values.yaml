@@ -17,6 +17,9 @@ resources:
   requests:
     memory: 9Gi
     cpu: 4
+  limits:
+    memory: 9Gi
+    cpu: 4
 
 lifecycle:
   postStart: []
