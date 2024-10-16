@@ -1,0 +1,113 @@
+---
+# NFS StorageClass
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: Immediate
+---
+# PersistentVolume for Jackett config
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jackett-config-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/jackett/config
+  storageClassName: nfs-storage
+---
+# PersistentVolumeClaim for Jackett config
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jackett-config-pvc
+  namespace: media
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-storage
+---
+# Jackett Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jackett
+  namespace: media
+  labels:
+    app: jackett
+spec:
+  selector:
+    matchLabels:
+      app: jackett
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jackett
+    spec:
+      containers:
+      - name: jackett
+        image: linuxserver/jackett:latest
+        ports:
+        - containerPort: 9117
+        volumeMounts:
+        - mountPath: /config/Jackett
+          name: jackett-config
+      volumes:
+      - name: jackett-config
+        persistentVolumeClaim:
+          claimName: jackett-config-pvc
+---
+# Jackett Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jackett
+  namespace: media
+spec:
+  selector:
+    app: jackett
+  ports:
+    - protocol: TCP
+      port: 9117
+      targetPort: 9117
+  type: LoadBalancer
+---
+# Jackett Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jackett-ingress
+  namespace: media
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-cloudflare"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+spec:
+  rules:
+  - host: jackett.zemn.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jackett
+            port:
+              number: 9117
+  tls:
+  - hosts:
+    - "*.zemn.xyz"
+    secretName: zemn-wildcard-tls
