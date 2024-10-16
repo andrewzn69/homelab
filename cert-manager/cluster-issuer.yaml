@@ -7,7 +7,7 @@ spec:
     server: https://acme-v02.api.letsencrypt.org/directory
     email: ondrejzeman23@gmail.com
     privateKeySecretRef:
-      name: letsencrypt-cloudflare-key
+      name: letsencrypt-cloudflare-account-key
     solvers:
     - dns01:
         cloudflare:
