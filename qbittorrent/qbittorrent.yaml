@@ -1,0 +1,161 @@
+# Create NFS PersistentVolumes
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qbittorrent-config-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/qbittorrent/
+  storageClassName: nfs-storage
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: qbittorrent-downloads-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/qbittorrent/
+  storageClassName: nfs-storage
+---
+# Create NFS PersistentVolumeClaims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-config-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-downloads-pvc
+  namespace: media
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs-storage
+---
+# qbittorrent deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: media
+  labels:
+    app: qbittorrent
+spec:
+  selector:
+    matchLabels:
+      app: qbittorrent
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      nodeSelector:
+        # kubernetes.io/hostname: rocky
+      containers:
+      - name: qbittorrent
+        image: hotio/qbittorrent
+        ports:
+        - containerPort: 8080
+        - containerPort: 8999
+        env:
+        - name: QBT_WEBUI_PORT
+          value: "8080"
+        volumeMounts:
+        - mountPath: /media/Shows
+          name: external-shows
+        - mountPath: /media/Movies1
+          name: movies1
+        - mountPath: /media/Movies2
+          name: movies2
+        - mountPath: /config
+          name: qbittorrent-config
+        - mountPath: /downloads
+          name: qbittorrent-downloads
+      volumes:
+        - name: external-shows
+          nfs:
+            server: 192.168.0.113
+            path: /mnt/external/Shows
+        - name: movies1
+          nfs:
+            server: 192.168.0.113
+            path: /mnt/movies1/Movies
+        - name: movies2
+          nfs:
+            server: 192.168.0.113
+            path: /mnt/movies2/Movies
+        - name: qbittorrent-config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config-pvc
+        - name: qbittorrent-downloads
+          persistentVolumeClaim:
+            claimName: qbittorrent-downloads-pvc
+---
+# qbittorrent Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+# Jellyfin Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qbittorrent-ingress
+  namespace: media
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-cloudflare"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+spec:
+  rules:
+  - host: qbittorrent.zemn.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: qbittorrent
+            port:
+              number: 8080
+  tls:
+  - hosts:
+    - "*.zemn.xyz"
+    secretName: zemn-wildcard-tls
