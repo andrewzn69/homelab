@@ -1,0 +1,32 @@
+# jellyfin config
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-config-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/jellyfin/config
+  storageClassName: nfs-storage
+---
+# jellyfin cache
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jellyfin-cache-pv
+  namespace: media
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.0.113
+    path: /mnt/external/config/jellyfin/cache
+  storageClassName: nfs-storage
+---
