@@ -8,7 +8,7 @@ image:
 # ### WARNING ###
 # Minecraft is not horizontally scalable, adjusting this will most likely break your setup.
 # ### WARNING ###
-replicaCount: 1
+replicaCount: 0
 
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
@@ -334,7 +334,7 @@ minecraftServer:
     # List of project slugs or IDs to be excluded from modpack, useful if mod is incorrectly marked as server side
     excludeMods: [double-doors]
     # List of project slugs or IDs to be included in modpack, useful if mod is incorrectly marked as client side only
-    includeMods: [luna, another-furniture]
+    includeMods: [luna, another-furniture, refurbished-furniture, framework]
     # Path to file with rules for including and excluding mods. If null - use bundled file, if empty - disable it
     excludeIncludeFile: null
     # Reevaluate exclude and include rules
