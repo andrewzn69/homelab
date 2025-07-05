@@ -5,5 +5,9 @@ terraform {
       source  = "Telmate/proxmox"
       version = "3.0.2-rc01"
     }
+    talos = {
+      source  = "siderolabs/talos"
+      version = "0.9.0-alpha.0"
+    }
   }
 }
