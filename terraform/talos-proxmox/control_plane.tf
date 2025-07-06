@@ -51,6 +51,6 @@ resource "proxmox_vm_qemu" "control_plane_vm" {
       network,
       desc
     ]
-    prevent_destroy = false
+    prevent_destroy = true
   }
 }
