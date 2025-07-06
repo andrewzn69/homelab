@@ -22,4 +22,14 @@ locals {
   ]
 
   all_vms = concat(local.control_plane_vms, local.worker_vms)
+
+  control_plane_private_ipv4_list = [
+    for vm in local.control_plane_vms : proxmox_vm_qemu.control_plane_vm[vm.name].default_ipv4_address
+  ]
+
+  control_plane_public_ipv4_list = [
+    for vm in local.control_plane_vms : proxmox_vm_qemu.control_plane_vm[vm.name].default_ipv4_address
+  ]
+
+  cluster_api_host_public = var.cluster_api_host != null ? var.cluster_api_host : var.cluster_endpoint
 }
