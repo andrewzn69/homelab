@@ -76,3 +76,57 @@ variable "worker_memory" {
   type        = number
   default     = 6144
 }
+
+variable "cluster_name" {
+  description = "The name of the cluster"
+  type        = string
+  default     = "cafe"
+}
+
+variable "cluster_domain" {
+  description = "The domain name of the cluster"
+  type        = string
+  default     = "cafe.local"
+}
+
+variable "cluster_api_host" {
+  description = <<EOF
+    Optional. A stable DNS hostname for the public Kubernetes API endpoint (e.g., `kube.mydomain.com`).
+    If set, you MUST configure a DNS A record for this hostname pointing to your desired public entrypoint (e.g., Floating IP, Load Balancer IP).
+    This hostname will be embedded in the cluster's certificates (SANs).
+    If not set, the generated kubeconfig/talosconfig will use an IP address based on `output_mode_config_cluster_endpoint`.
+    Internal cluster communication often uses `kube.[cluster_domain]`, which is handled automatically via /etc/hosts if `enable_alias_ip = true`.
+  EOF
+  type        = string
+  default     = null
+}
+
+variable "cluster_endpoint" {
+  description = "The IP address of the cluster API endpoint"
+  type        = string
+  default     = "https://192.168.0.200:6443"
+}
+
+variable "talos_version" {
+  description = "The version of talos features to use in generated machine configurations"
+  type        = string
+  default     = "v1.10.4"
+}
+
+variable "kubernetes_version" {
+  description = <<EOF
+    The Kubernetes version to use. If not set, the latest version supported by Talos is used: https://www.talos.dev/v1.7/introduction/support-matrix/
+  EOF
+  type        = string
+  default     = "1.30.3"
+}
+
+variable "output_mode_config_cluster_endpoint" {
+  description = "How to configure the cluster endpoint in talosconfig: 'private_ip', 'public_ip' or 'cluster_endpoint'"
+  type        = string
+  default     = "private_ip"
+  validation {
+    condition     = contains(["private_ip", "public_ip", "cluster_endpoint"], var.output_mode_config_cluster_endpoint)
+    error_message = "output_mode_config_cluster_endpoint must be one of: private_ip, public_ip, cluster_endpoint"
+  }
+}
