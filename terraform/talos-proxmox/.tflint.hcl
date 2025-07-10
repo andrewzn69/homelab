@@ -1,4 +1,4 @@
 plugin "terraform" {
-  enabled true
+  enabled = true
   preset = "recommended"
 }
