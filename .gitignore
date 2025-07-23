@@ -23,3 +23,6 @@ override.tf.json
 
 # helm values
 values.yaml
+
+# ansible config
+ansible.cfg
