@@ -1,0 +1,47 @@
+- name: install nfs server
+  apt:
+    name: nfs-kernel-server
+    state: present
+    update_cache: true
+
+- name: ensure mount point exists
+  file:
+    path: "/mnt/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - sda1
+    - sdb1
+    - sdd1
+
+- name: get uuids
+  command: blkid -s UUID -o value /dev/{{item}}
+  register: blkid_results
+  changed_when: false
+  loop:
+    - sda1
+    - sdb1
+    - sdd1
+
+- name: build uuid_map from blkid_results
+  set_fact:
+    uuid_map: "{{ uuid_map | default({}) | combine({ item.item: item.stdout }) }}"
+  loop: "{{ blkid_results.results }}"
+
+- name: mount drives with fstab
+  mount:
+    path: "/mnt/{{ item.key }}"
+    src: "UUID={{ item.value }}"
+    fstype: ext4
+    opts: defaults
+    state: mounted
+  loop: "{{ uuid_map | dict2items }}"
+
+- name: template /etc/exports
+  template:
+    src: exports.j2
+    dest: /etc/exports
+    mode: '0644'
+  notify:
+    - restart nfs server
+    - reload nfs exports

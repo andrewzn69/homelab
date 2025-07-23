@@ -1,0 +1,7 @@
+- name: restart nfs server
+  service:
+    name: nfs-server
+    state: restarted
+
+- name: reload nfs exports
+  command: exportfs -ra
