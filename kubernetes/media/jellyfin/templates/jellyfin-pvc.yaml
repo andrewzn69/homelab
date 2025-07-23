@@ -1,28 +1,26 @@
-# jellyfin config
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: jellyfin-config-pvc
-  namespace: media
+  namespace: {{ .Values.namespace }}
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
-  storageClassName: nfs-storage
+      storage: {{ .Values.storage.configSize }}
+  storageClassName: {{ .Values.storage.storageClass }}
 ---
-# jellyfin cache
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: jellyfin-cache-pvc
-  namespace: media
+  namespace: {{ .Values.namespace }}
 spec:
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
-  storageClassName: nfs-storage
+      storage: {{ .Values.storage.cacheSize }}
+  storageClassName: {{ .Values.storage.storageClass }}
 ---

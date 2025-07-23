@@ -1,9 +1,8 @@
-# jellyfin jervice
 apiVersion: v1
 kind: Service
 metadata:
   name: jellyfin
-  namespace: media
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     app: jellyfin
