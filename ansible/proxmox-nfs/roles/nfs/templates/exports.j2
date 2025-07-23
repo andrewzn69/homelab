@@ -1,3 +1,4 @@
-/mnt/sda1 192.168.0.0/24(rw,sync,no_subtree_check)
-/mnt/sdb1 192.168.0.0/24(rw,sync,no_subtree_check)
-/mnt/sdd1 192.168.0.0/24(rw,sync,no_subtree_check)
+{% set mounts = ['/mnt/sda1', '/mnt/sdb1', '/mnt/sdd1'] %}
+{% for mount in mounts %}
+{{ mount }} 192.168.0.0/24(rw,sync,no_subtree_check)
+{% endfor %}
