@@ -20,3 +20,6 @@ override.tf.json
 
 # variables files
 *.tfvars
+
+# helm values
+values.yaml
