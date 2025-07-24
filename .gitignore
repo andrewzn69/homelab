@@ -26,3 +26,6 @@ values.yaml
 
 # ansible config
 ansible.cfg
+
+# kubernetes folder
+kubernetes/
